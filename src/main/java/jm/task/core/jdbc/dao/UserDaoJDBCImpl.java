@@ -8,82 +8,132 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
-
-
-    private final Connection connection = Util.getConnection();
+    private Connection connection = null;
+    private Statement statement = null;
+    private PreparedStatement preparedStatement = null;
 
     public UserDaoJDBCImpl() {
 
     }
     public void createUsersTable() {
-        try (Statement statement = connection.createStatement()) {
+        try {
+            connection = Util.getConnection();
+            connection.setAutoCommit(false);
+            statement = connection.createStatement();
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS users " +
                     "(id INT NOT NULL AUTO_INCREMENT,  name VARCHAR(255), lastName VARCHAR(255), age INT, PRIMARY KEY (id))");
             connection.commit();
         } catch (SQLException e) {
-            e.printStackTrace();
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+            } catch (SQLException el) {
+                el.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            if (connection != null & statement != null) {
+                try {
+                    connection.close();
+                    statement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
-
     }
-
-
     public void dropUsersTable() {
-        try (Statement statement = connection.createStatement()) {
+        try {
+            connection = Util.getConnection();
+            connection.setAutoCommit(false);
+            statement = connection.createStatement();
             statement.executeUpdate("DROP TABLE IF EXISTS users");
             connection.commit();
         } catch (SQLException e) {
-            e.printStackTrace();
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+            } catch (SQLException el) {
+                el.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            if (connection != null & statement != null) {
+                try {
+                    connection.close();
+                    statement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
 
     public void saveUser(String name, String lastName, byte age) {
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate("INSERT INTO users(name, lastName, age) " +
-                    "VALUES('" + name + "', '" + lastName + "', '" + age + "')");
+        String sql = "INSERT INTO users (name, lastName, age) Values (?, ?, ?)";
+        try  {
+            connection = Util.getConnection();
+            connection.setAutoCommit(false);
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, lastName);
+            preparedStatement.setByte(3, age);
+            preparedStatement.executeUpdate();
             connection.commit();
-            System.out.println("User с именем – " + name + " добавлен в базу данных");
-        } catch (SQLException e) {
-            e.printStackTrace();
+
+        } catch (SQLException  e) {
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+            } catch (SQLException el) {
+                el.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            if (connection != null & preparedStatement != null) {
+                try {
+                    connection.close();
+                    preparedStatement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
+        System.out.println("User с именем – "+ name +" добавлен в базу данных" );
     }
 
     public void removeUserById(long id) {
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM users WHERE id = ?");
+        try  {
+            connection = Util.getConnection();
+            connection.setAutoCommit(false);
+            preparedStatement = connection.prepareStatement("DELETE FROM users WHERE id = ?");
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
             connection.commit();
         } catch (SQLException e) {
-            e.printStackTrace();
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+            } catch (SQLException el) {
+                el.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            if (connection != null & preparedStatement != null) {
+                try {
+                    connection.close();
+                    preparedStatement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
     public List<User> getAllUsers() {
         List<User> userList = new ArrayList<>();
-        try {
-            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+        String query = "SELECT * FROM users";
+
+        try  {
+            connection = Util.getConnection();
             connection.setAutoCommit(false);
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+            statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(query);
             while (resultSet.next()) {
                 User user = new User();
                 user.setId(resultSet.getLong(1));
@@ -93,29 +143,49 @@ public class UserDaoJDBCImpl implements UserDao {
                 userList.add(user);
             }
             connection.commit();
-
         } catch (SQLException e) {
-            e.printStackTrace();
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+            } catch (SQLException el) {
+                el.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            if (connection != null & statement != null) {
+                try {
+                    connection.close();
+                    statement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
         System.out.println(userList);
         return userList;
     }
-
     public void cleanUsersTable() {
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate("TRUNCATE TABLE users");
+        String sqlCommand = "TRUNCATE TABLE users";
+        try {
+            connection = Util.getConnection();
+            connection.setAutoCommit(false);
+            statement = connection.createStatement();
+            statement.executeUpdate(sqlCommand);
             connection.commit();
         } catch (SQLException e) {
-            e.printStackTrace();
             try {
                 connection.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+            } catch (SQLException el) {
+                el.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            if (connection != null & statement != null) {
+                try {
+                    connection.close();
+                    statement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
